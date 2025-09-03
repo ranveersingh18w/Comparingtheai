@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhansu Planner</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header class="main-header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>Dhansu Planner</h1>
+                </div>
+                <div class="header-info">
+                    <div id="countdown-timer"></div>
+                    <div id="current-datetime"></div>
+                    <div class="progress-ring-container">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring__circle" stroke="white" stroke-width="4" fill="transparent" r="52" cx="60" cy="60"/>
+                        </svg>
+                        <span class="progress-ring__text">0%</span>
+                    </div>
+                    <div id="motivational-text"></div>
+                </div>
+                <div class="header-actions">
+                    <div id="pomodoro-timer">
+                        <span id="pomodoro-time">25:00</span>
+                        <button id="pomodoro-start">Start</button>
+                        <button id="pomodoro-pause">Pause</button>
+                        <button id="pomodoro-reset">Reset</button>
+                    </div>
+                    <input type="search" id="global-search" placeholder="Search...">
+                    <button id="theme-toggle">Toggle Theme</button>
+                </div>
+            </div>
+        </header>
+        <main class="main-content">
+            <nav class="main-nav">
+                <button data-view="todo">Todo List</button>
+                <button data-view="weekly">Weekly Planner</button>
+                <button data-view="monthly">Monthly Planner</button>
+            </nav>
+            <div id="view-container">
+                <div id="todo-view" class="view">
+                    <h2>Todo List</h2>
+                    <form id="add-task-form">
+                        <input type="text" id="task-title" placeholder="Enter task title" required>
+                        <select id="task-priority">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                        <input type="date" id="task-due-date">
+                        <input type="text" id="task-tags" placeholder="Tags (comma-separated)">
+                        <button type="submit">Add Task</button>
+                    </form>
+                    <div id="task-filters">
+                        <button data-filter="all">All</button>
+                        <button data-filter="today">Today</button>
+                        <button data-filter="overdue">Overdue</button>
+                        <button data-filter="completed">Completed</button>
+                        <button data-filter="high">High Priority</button>
+                    </div>
+                    <div id="countdown-chips"></div>
+                    <div id="quick-templates">
+                        <button data-template="assignment">Add Assignment</button>
+                        <button data-template="exam">Add Exam</button>
+                        <button data-template="lab">Add Lab</button>
+                    </div>
+                    <ul id="task-list"></ul>
+                </div>
+                <div id="weekly-view" class="view">
+                    <h2>Weekly Planner</h2>
+                    <div id="weekly-planner"></div>
+                </div>
+                <div id="monthly-view" class="view">
+                    <h2>Monthly Planner</h2>
+                    <div class="monthly-header">
+                        <button id="prev-month">Prev</button>
+                        <h3 id="month-year"></h3>
+                        <button id="next-month">Next</button>
+                    </div>
+                    <div id="monthly-planner"></div>
+                </div>
+                <!-- Other views will be added here -->
+            </div>
+        </main>
+    </div>
+    <div id="add-event-modal" class="modal">
+        <div class="modal-content">
+            <h2>Add Event</h2>
+            <input type="text" id="event-title" placeholder="Event title">
+            <input type="date" id="event-start-date">
+            <input type="date" id="event-end-date">
+            <textarea id="event-notes" placeholder="Notes"></textarea>
+            <button id="save-event">Save</button>
+            <button id="close-modal">Close</button>
+        </div>
+    </div>
+    <div id="tooltip" class="tooltip"></div>
+    <script src="script.js"></script>
+</body>
+</html>

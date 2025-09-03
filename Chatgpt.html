@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dhansu Planner — Todo • Week • Month</title>
+<style>
+:root{
+  --bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent1:#7c3aed;--accent2:#06b6d4;--glass: rgba(255,255,255,0.06);
+  --success:#10b981;--danger:#ef4444;--radius:14px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; margin:0; background:linear-gradient(180deg,#071226 0%, #081028 50%, #071026 100%); color:#e6eef6; -webkit-font-smoothing:antialiased;}
+.app{max-width:1100px;margin:18px auto;padding:18px;}
+.header{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:56px;height:56px;border-radius:12px;background:conic-gradient(from 180deg at 50% 50%,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#051024}
+.title{font-size:18px;line-height:1}
+.subtitle{font-size:12px;color:var(--muted)}
+.controls{display:flex;gap:10px;align-items:center}
+.icon-btn{background:var(--glass);border:none;padding:10px;border-radius:10px;cursor:pointer;backdrop-filter: blur(6px);}
+.toggle{display:inline-flex;align-items:center;gap:8px;padding:8px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,0.03),transparent);}
+.countdown{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,rgba(255,255,255,0.03), rgba(255,255,255,0.02));box-shadow:0 6px 18px rgba(2,6,23,0.7)}
+.countdown .time{font-weight:700;font-size:16px}
+.small{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:8px;margin-top:18px}
+.tab{padding:10px 14px;border-radius:12px;background:transparent;border:1px solid transparent;cursor:pointer}
+.tab.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#031026;border:1px solid rgba(255,255,255,0.06)}
+.main{display:grid;grid-template-columns:1fr 360px;gap:16px;margin-top:16px}
+@media (max-width:900px){.main{grid-template-columns:1fr;}.controls{flex-wrap:wrap}}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:var(--radius); padding:12px; box-shadow: 0 6px 30px rgba(2,6,23,0.7)}
+.todo-add{display:flex;gap:8px}
+.input{flex:1;padding:10px;border-radius:10px;border:1px dashed rgba(255,255,255,0.03);background:transparent;color:inherit}
+.btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer}
+.btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021023}
+.todo-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.todo{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
+.todo .drag{cursor:grab}
+.checkbox{width:18px;height:18px;border-radius:6px;border:2px solid rgba(255,255,255,0.06);display:inline-block}
+.todo.done{opacity:0.6;text-decoration:line-through}
+.tag{padding:4px 8px;border-radius:999px;font-size:12px}
+.tag.assign{background:linear-gradient(90deg,#ffd6a5,#ffb4a2);color:#1a0b00}
+.tag.exam{background:linear-gradient(90deg,#c4b5fd,#7c3aed);color:#051026}
+.tag.club{background:linear-gradient(90deg,#86efac,#34d399);color:#052012}
+.priority-low{border-left:6px solid #10b981}
+.priority-med{border-left:6px solid #f59e0b}
+.priority-high{border-left:6px solid #ef4444}
+.filters{display:flex;gap:8px;margin-top:8px}
+.filter{padding:6px 10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day-col{min-height:420px;padding:8px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);}
+.day-head{font-size:12px;margin-bottom:6px}
+.slot{height:40px;border-radius:8px;margin-bottom:6px;padding:6px;border:1px dashed rgba(255,255,255,0.02);background:transparent}
+.event{padding:6px;border-radius:8px;background:linear-gradient(90deg,#fff2cc33,#c7f9ff22);cursor:grab}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-day{min-height:80px;padding:8px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);position:relative}
+.cal-day .date-num{position:absolute;top:8px;right:8px;font-size:12px;color:var(--muted)}
+.progress-ring{width:56px;height:56px;display:grid;place-items:center;border-radius:50%;background:conic-gradient(var(--success) var(--p,0%), rgba(255,255,255,0.06) 0%);}
+.search{padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);width:100%}
+.small-muted{font-size:12px;color:var(--muted)}
+.kbd{padding:4px 8px;border-radius:6px;background:#071226;border:1px solid rgba(255,255,255,0.03);font-size:12px}
+.footer{margin-top:18px;text-align:center;color:var(--muted)}
+/* focus states and accessibility */
+[tabindex]:focus{outline:3px solid rgba(124,58,237,0.25);outline-offset:3px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Dhansu Planner">
+  <div class="header">
+    <div class="brand">
+      <div class="logo">DP</div>
+      <div>
+        <div class="title">Dhansu Planner</div>
+        <div class="subtitle">College-focused — Todo, Week & Month</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="countdown card" aria-live="polite">
+        <div>
+          <div class="small">Time left today</div>
+          <div class="time" id="countdown">--:--:--</div>
+        </div>
+        <div style="margin-left:8px"><div id="micro-text" class="small-muted">Let's go!</div></div>
+      </div>
+      <div class="toggle card" role="group" aria-label="Theme toggle">
+        <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-pressed="false">🌓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Main tabs">
+    <button class="tab active" data-tab="todo" role="tab" aria-selected="true">Todo</button>
+    <button class="tab" data-tab="week" role="tab">Weekly</button>
+    <button class="tab" data-tab="month" role="tab">Monthly</button>
+  </div>
+
+  <div class="main">
+    <div>
+      <div id="todoView" class="card" role="region" aria-labelledby="todoHeading">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 id="todoHeading">Today's Todos</h3>
+          <div class="small-muted">Press <span class="kbd">N</span> for new task • <span class="kbd">/</span> to search</div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:8px;align-items:center">
+          <input id="quickInput" class="input" placeholder="Add task — title #tag , due yyyy-mm-dd @priority" aria-label="Quick add" />
+          <button id="addQuick" class="btn primary">Add</button>
+        </div>
+
+        <div class="filters" role="toolbar" aria-label="Quick filters">
+          <button class="filter" data-filter="all">All</button>
+          <button class="filter" data-filter="today">Today</button>
+          <button class="filter" data-filter="overdue">Overdue</button>
+          <button class="filter" data-filter="completed">Completed</button>
+          <button class="filter" data-filter="high">High</button>
+        </div>
+
+        <div id="todoList" class="todo-list" aria-live="polite" tabindex="0"></div>
+      </div>
+
+      <div id="weekView" class="card" role="region" aria-labelledby="weekHeading" hidden>
+        <h3 id="weekHeading">Weekly Planner</h3>
+        <div class="small-muted">Drag tasks into time slots. Quick add classes or study sessions.</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="quickClass">+ Class</button>
+          <button class="btn" id="quickStudy">+ Study</button>
+          <label class="small-muted" style="margin-left:auto">Slot length
+            <select id="slotLen"><option value="30">30</option><option value="60">60</option></select>
+          </label>
+        </div>
+        <div style="margin-top:12px;overflow:auto">
+          <div class="week" id="weekGrid" aria-label="Week grid"></div>
+        </div>
+      </div>
+
+      <div id="monthView" class="card" role="region" aria-labelledby="monthHeading" hidden>
+        <h3 id="monthHeading">Monthly Calendar</h3>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <button class="btn" id="newEvent">New Event</button>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center"><input id="monthSearch" class="search" placeholder="Search events..."/></div>
+        </div>
+        <div style="margin-top:12px;" id="monthGridWrapper">
+          <div class="calendar" id="monthGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="progress-ring" id="progressRing" style="--p:0%"> <div id="progressNum">0</div></div>
+          <div>
+            <div class="small-muted">Tasks done today</div>
+            <div id="todayStats" style="font-weight:700">0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between"><div class="small-muted">Search & Filters</div><div class="small-muted">Tags</div></div>
+        <input id="globalSearch" class="search" placeholder="Search tasks & events"/>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="filter" data-tag="Assignment">Assignment</button>
+          <button class="filter" data-tag="Exam">Exam</button>
+          <button class="filter" data-tag="Club">Club</button>
+          <button class="filter" data-tag="Personal">Personal</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="small-muted">Pomodoro Mini</div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <button id="pomStart" class="btn">Start 25/5</button>
+          <div id="pomBox" class="small-muted">00:00</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="small-muted">Quick Templates</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn" id="tplAssign">Add Assignment</button>
+          <button class="btn" id="tplExam">Add Exam</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="footer">Made with ♥ for college hustle — offline first, keyboard-friendly, and dhansu.</div>
+</div>
+
+<!-- Modals & templates -->
+<div id="modals" aria-hidden="true"></div>
+
+<script>
+/* Dhansu Planner — Single-file vanilla JS app
+  Features implemented:
+  - Todo list with add/edit/delete, priority, tags, due date
+  - Quick filters, inline edit, drag-to-reorder
+  - Weekly planner grid with drag & drop of tasks into slots
+  - Monthly calendar with events, drag between dates
+  - Countdown to 11:59:59 PM local time (updates every second)
+  - Progress ring for today's completed tasks
+  - Pomodoro mini timer attachable to tasks (simple)
+  - LocalStorage persistence and basic analytics
+  - Keyboard shortcuts: N (new), / (search), Del (delete selected)
+  Accessibility: ARIA attributes and focus outlines
+*/
+
+const STORAGE_KEY = 'dhansu_data_v1';
+const SETTINGS_KEY = 'dhansu_settings_v1';
+
+let state = {
+  todos: [], // {id, title, tags:[],priority, due, done, order, created}
+  events: [], // {id,title, start, end, notes, color}
+  week: {}, // mapping day->array of {id,taskId,startSlot,duration}
+  settings: {theme:'dark',weekStart:1,slotLen:30,activeTab:'todo'}
+};
+
+function uid(prefix='id'){return prefix + '_' + Math.random().toString(36).slice(2,9)}
+
+/* Persistence */
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    if(raw) state = JSON.parse(raw);
+    state.settings = Object.assign(state.settings||{}, settings);
+  }catch(e){console.error(e)}
+}
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+}
+
+/* Init */
+function init(){
+  load();
+  applyTheme();
+  bindUI();
+  if(!state.todos.length && !state.events.length){ seedDemo(); }
+  renderAll();
+  startCountdown();
+}
+
+/* Seed some demo data for first load */
+function seedDemo(){
+  state.todos = [
+    {id:uid('t'),title:'Read Organic Chemistry notes',tags:['Assignment'],priority:'High',due:tomorrowISO(),done:false,order:1,created:Date.now()},
+    {id:uid('t'),title:'Club meeting — Design Club',tags:['Club'],priority:'Low',due:todayISO(),done:false,order:2,created:Date.now()},
+    {id:uid('t'),title:'Finish Math assignment',tags:['Assignment'],priority:'High',due:addDaysISO(2),done:false,order:3,created:Date.now()},
+  ];
+  state.events = [];
+  state.week = {};
+  save();
+}
+
+/* Utilities for dates */
+function todayISO(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function tomorrowISO(){ const d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+
+/* UI Bindings */
+function bindUI(){
+  document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',ev=>{ switchTab(ev.currentTarget.dataset.tab); }));
+  document.getElementById('addQuick').addEventListener('click', ()=>addQuickTask());
+  document.getElementById('quickInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') addQuickTask(); });
+  document.querySelectorAll('.filter').forEach(f=>f.addEventListener('click', ()=>{ applyFilter(f.dataset.filter||f.dataset.tag) }));
+  document.getElementById('themeToggle').addEventListener('click', ()=>{ toggleTheme(); });
+  document.getElementById('globalSearch').addEventListener('input', (e)=>{ renderAll(); });
+  document.getElementById('newEvent').addEventListener('click', createEventModal);
+  document.getElementById('slotLen').addEventListener('change',(e)=>{ state.settings.slotLen = Number(e.target.value); save(); renderWeek(); });
+  document.getElementById('quickClass').addEventListener('click', ()=>quickAddToWeek('Class'));
+  document.getElementById('quickStudy').addEventListener('click', ()=>quickAddToWeek('Study'));
+  document.getElementById('tplAssign').addEventListener('click', ()=>prefillTemplate('Assignment'));
+  document.getElementById('tplExam').addEventListener('click', ()=>prefillTemplate('Exam'));
+  document.getElementById('pomStart').addEventListener('click', startPomodoro);
+  document.getElementById('monthSearch').addEventListener('input', renderMonth);
+  document.addEventListener('keydown', globalShortcuts);
+}
+
+function switchTab(tab){ state.settings.activeTab = tab; save();
+  document.querySelectorAll('.tab').forEach(t=>{ t.classList.toggle('active', t.dataset.tab===tab); t.setAttribute('aria-selected', t.dataset.tab===tab); });
+  document.getElementById('todoView').hidden = tab!=='todo';
+  document.getElementById('weekView').hidden = tab!=='week';
+  document.getElementById('monthView').hidden = tab!=='month';
+}
+
+function applyFilter(key){ if(!key) return; document.getElementById('globalSearch').value = ''; renderTodos(key); }
+
+/* Quick add parsing: allow syntax: title #Tag @High due:YYYY-MM-DD */
+function parseQuick(text){
+  const res = {title:text, tags:[], priority:'Med', due:null};
+  // tags with #
+  const tagMatches = text.match(/#(\w+)/g);
+  if(tagMatches) res.tags = tagMatches.map(t=>t.slice(1));
+  const pr = text.match(/@(?:(High|Med|Low))/i);
+  if(pr) res.priority = pr[1];
+  const d = text.match(/(\d{4}-\d{2}-\d{2})/);
+  if(d) res.due = d[1];
+  // clean title
+  res.title = text.replace(/#\w+/g,'').replace(/@(?:High|Med|Low)/ig,'').replace(/\d{4}-\d{2}-\d{2}/,'').trim();
+  return res;
+}
+
+function addQuickTask(){ const v = document.getElementById('quickInput').value.trim(); if(!v) return; const p = parseQuick(v); const task = {id:uid('t'),title:p.title||'Untitled',tags:p.tags,priority:p.priority,due:p.due||null,done:false,order:state.todos.length+1,created:Date.now()}; state.todos.push(task); save(); document.getElementById('quickInput').value=''; renderTodos(); renderStats(); }
+
+/* Renderers */
+function renderAll(){ renderTodos(); renderWeek(); renderMonth(); renderStats(); }
+
+function renderTodos(filterKey){ const list = document.getElementById('todoList'); list.innerHTML='';
+  const search = document.getElementById('globalSearch').value.trim().toLowerCase();
+  let items = state.todos.slice().sort((a,b)=>a.order-b.order);
+  if(filterKey==='today') items = items.filter(t=>t.due===todayISO());
+  if(filterKey==='overdue') items = items.filter(t=>t.due && t.due < todayISO() && !t.done);
+  if(filterKey==='completed') items = items.filter(t=>t.done);
+  if(filterKey==='high') items = items.filter(t=>t.priority==='High');
+  if(filterKey && ['Assignment','Exam','Club','Personal'].includes(filterKey)) items = items.filter(t=>t.tags.includes(filterKey));
+  if(search) items = items.filter(t=> (t.title||'').toLowerCase().includes(search) || (t.tags||[]).join(' ').toLowerCase().includes(search));
+
+  items.forEach(t=>{
+    const div = document.createElement('div'); div.className = 'todo '+(t.done?'done':'')+' priority-'+(t.priority.toLowerCase()); div.draggable = true; div.dataset.id = t.id;
+    div.innerHTML = `
+      <div class="drag" aria-hidden="true">☰</div>
+      <label class="checkbox" role="checkbox" aria-checked="${t.done}" tabindex="0"></label>
+      <div style="flex:1">
+        <div contenteditable="true" role="textbox" aria-label="Edit task title" class="title">${escapeHtml(t.title)}</div>
+        <div class="small-muted">${t.due ? 'Due ' + t.due : ''} ${t.tags.map(tag=>`<span class="tag ${tag.toLowerCase()?tag.toLowerCase():''}">${tag}</span>`).join(' ')}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn" data-action="edit">✏️</button>
+        <button class="btn" data-action="delete">🗑️</button>
+      </div>
+    `;
+    // events
+    div.querySelector('.checkbox').addEventListener('click', ()=>{ t.done = !t.done; save(); renderTodos(); renderStats(); });
+    div.querySelector('.title').addEventListener('input',(e)=>{ t.title = e.currentTarget.textContent.trim(); save(); });
+    div.querySelector('[data-action="delete"]').addEventListener('click', ()=>{ if(confirm('Delete task?')){ state.todos = state.todos.filter(x=>x.id!==t.id); save(); renderTodos(); renderStats(); }});
+    // drag reordering
+    div.addEventListener('dragstart',(e)=>{ e.dataTransfer.setData('text/plain', t.id); e.dataTransfer.effectAllowed='move'; div.style.opacity=0.5; });
+    div.addEventListener('dragend',()=>{ div.style.opacity=1; });
+    div.addEventListener('dragover',(e)=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; });
+    div.addEventListener('drop',(e)=>{ e.preventDefault(); const srcId = e.dataTransfer.getData('text/plain'); reorderTask(srcId,t.id); });
+    list.appendChild(div);
+  });
+  // allow dropping at end to append
+  list.addEventListener('dragover',(e)=>e.preventDefault());
+  list.addEventListener('drop',(e)=>{ e.preventDefault(); const srcId = e.dataTransfer.getData('text/plain'); if(!srcId) return; reorderTask(srcId,null); });
+}
+
+function reorderTask(srcId, beforeId){ const idx = state.todos.findIndex(t=>t.id===srcId); if(idx<0) return; const [item] = state.todos.splice(idx,1); if(beforeId){ const bi = state.todos.findIndex(t=>t.id===beforeId); state.todos.splice(bi,0,item); } else state.todos.push(item); // reassign orders
+  state.todos.forEach((t,i)=>t.order=i+1); save(); renderTodos(); }
+
+function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+/* Week renderer */
+function renderWeek(){ const grid = document.getElementById('weekGrid'); grid.innerHTML=''; const slotLen = state.settings.slotLen || 30; const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  days.forEach((d,i)=>{
+    const col = document.createElement('div'); col.className='day-col'; col.dataset.dayIndex=i+1; col.innerHTML = `<div class="day-head">${d}</div>`;
+    // generate timeslots for 12 hours (8am-8pm) quickly
+    const startHour = 8, endHour = 20; for(let h=startHour; h<endHour; h++){
+      const slotsPerHour = 60/slotLen; for(let s=0;s<slotsPerHour;s++){
+        const slot = document.createElement('div'); slot.className='slot'; slot.dataset.time = `${String(h).padStart(2,'0')}:${String(s*slotLen).padStart(2,'0')}`; slot.dataset.day=i+1; slot.addEventListener('dragover', e=>e.preventDefault());
+        slot.addEventListener('drop', (e)=>{ e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); handleDropToWeek(id, slot.dataset.day, slot.dataset.time); });
+        col.appendChild(slot);
+      }
+    }
+    grid.appendChild(col);
+  });
+  // render any placed items
+  Object.keys(state.week || {}).forEach(day=>{
+    const arr = state.week[day] || [];
+    arr.forEach(item=>{
+      const col = grid.querySelector(`[data-day='${day}']`);
+      if(!col) return;
+      // compute slot index
+      const slot = col.querySelector(`.slot[data-time='${item.startSlot}']`);
+      if(slot){ const ev = document.createElement('div'); ev.className='event'; ev.draggable=true; ev.textContent = item.title || 'Task'; ev.dataset.id = item.id; ev.addEventListener('dragstart',(e)=>{ e.dataTransfer.setData('text/plain', item.id); });
+        ev.addEventListener('dblclick', ()=>{ alert('Edit weekly item: ' + ev.textContent); });
+        slot.appendChild(ev);
+      }
+    });
+  });
+}
+
+function handleDropToWeek(srcId, day, time){ // src can be a todo id or event id
+  const todo = state.todos.find(t=>t.id===srcId);
+  const item = {id: uid('w'), taskId: srcId, title: todo? todo.title: 'Item', startSlot: time, duration: state.settings.slotLen};
+  state.week[day] = state.week[day] || []; state.week[day].push(item); save(); renderWeek(); }
+
+/* Month renderer - simple calendar for current month */
+function renderMonth(){ const wrapper = document.getElementById('monthGrid'); wrapper.innerHTML=''; const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const first = new Date(year, month, 1); const startDay = (first.getDay()+6)%7; // Monday as first column
+  const daysInMonth = new Date(year, month+1,0).getDate();
+  // pad before
+  for(let i=0;i<startDay;i++){ const el=document.createElement('div'); el.className='cal-day'; wrapper.appendChild(el); }
+  for(let d=1; d<=daysInMonth; d++){
+    const date = new Date(year,month,d); const iso = date.toISOString().slice(0,10);
+    const dayEl = document.createElement('div'); dayEl.className='cal-day'; dayEl.dataset.date = iso; dayEl.innerHTML = `<div class="date-num">${d}</div>`;
+    dayEl.addEventListener('dragover', e=>e.preventDefault());
+    dayEl.addEventListener('drop', e=>{ e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); handleDropToDate(id, iso); });
+    // show events
+    const filtered = (state.events||[]).filter(ev=>ev.start===iso || (ev.start<=iso && ev.end>=iso));
+    filtered.forEach(ev=>{ const el = document.createElement('div'); el.className='event'; el.draggable = true; el.textContent = ev.title; el.dataset.id = ev.id; el.addEventListener('dragstart', (e)=>{ e.dataTransfer.setData('text/plain', ev.id); }); el.addEventListener('click', ()=>{ editEventModal(ev.id); }); dayEl.appendChild(el); });
+    wrapper.appendChild(dayEl);
+  }
+}
+function handleDropToDate(id, date){ const ev = state.events.find(e=>e.id===id); if(ev){ ev.start = date; ev.end = date; save(); renderMonth(); } else { // if a todo id, create quick event
+    const t = state.todos.find(x=>x.id===id); if(t){ const newEv = {id:uid('e'),title:t.title,start:date,end:date,notes:'From task'}; state.events.push(newEv); save(); renderMonth(); }
+  }
+}
+
+/* Events modal */
+function createEventModal(){ const title = prompt('Event title'); if(!title) return; const d = prompt('Date (YYYY-MM-DD)', todayISO()); if(!d) return; state.events.push({id:uid('e'),title, start:d, end:d, notes:''}); save(); renderMonth(); }
+function editEventModal(id){ const ev = state.events.find(e=>e.id===id); if(!ev) return; const title = prompt('Title', ev.title); if(title===null) return; ev.title = title; const date = prompt('Date', ev.start); if(date) ev.start = ev.end = date; save(); renderMonth(); }
+
+/* Stats & countdown */
+function renderStats(){ const todayTodos = state.todos.filter(t=>t.due===todayISO()); const done = todayTodos.filter(t=>t.done).length; const total = todayTodos.length; document.getElementById('todayStats').textContent = `${done} / ${total}`; const pct = total ? Math.round((done/total)*100) : 0; document.getElementById('progressRing').style.setProperty('--p', pct+'%'); document.getElementById('progressNum').textContent = pct+'%'; }
+
+let countdownTimer = null;
+function startCountdown(){ updateCountdown(); if(countdownTimer) clearInterval(countdownTimer); countdownTimer = setInterval(updateCountdown,1000); }
+function updateCountdown(){ const now = new Date(); const end = new Date(now); end.setHours(23,59,59,999); const diff = end - now; const h = Math.floor(diff/3600000); const m = Math.floor((diff%3600000)/60000); const s = Math.floor((diff%60000)/1000); document.getElementById('countdown').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  // micro text
+  const hour = now.getHours(); const micro = document.getElementById('micro-text'); if(hour>=6 && hour<12) micro.textContent='Morning grind!'; else if(hour>=12 && hour<17) micro.textContent='Power hour!'; else if(hour>=17 && hour<21) micro.textContent='Evening focus!'; else micro.textContent='Night owl mode!';
+}
+
+/* Theme */
+function applyTheme(){ if(state.settings.theme==='light'){ document.documentElement.style.setProperty('--bg','#f5f7fb'); document.body.style.background='linear-gradient(180deg,#f0f9ff,#fef9f5)'; } else { document.documentElement.style.removeProperty('--bg'); document.body.style.background='linear-gradient(180deg,#071226,#081028)'; } document.getElementById('themeToggle').setAttribute('aria-pressed', state.settings.theme==='light'); }
+function toggleTheme(){ state.settings.theme = state.settings.theme==='light' ? 'dark' : 'light'; applyTheme(); save(); }
+
+/* POMODORO */
+let pom = {running:false,timer:null,sec:0,phase:'work'};
+function startPomodoro(){ if(pom.running){ stopPom(); return; } pom.running=true; pom.phase='work'; pom.sec = 25*60; updatePomDisplay(); pom.timer = setInterval(()=>{ pom.sec--; if(pom.sec<=0){ if(pom.phase==='work'){ pom.phase='break'; pom.sec = 5*60; } else { stopPom(); } } updatePomDisplay(); },1000); document.getElementById('pomStart').textContent='Stop'; }
+function stopPom(){ pom.running=false; if(pom.timer) clearInterval(pom.timer); document.getElementById('pomStart').textContent='Start 25/5'; pom.sec=0; updatePomDisplay(); }
+function updatePomDisplay(){ const mm = String(Math.floor(pom.sec/60)).padStart(2,'0'); const ss = String(pom.sec%60).padStart(2,'0'); document.getElementById('pomBox').textContent = `${mm}:${ss}`; }
+
+/* Templates */
+function prefillTemplate(type){ const title = type==='Assignment' ? 'New Assignment: ' : 'Exam: '; const due = prompt('Due date (YYYY-MM-DD)', tomorrowISO()); const t = {id:uid('t'),title:title + (due||''),tags:[type],priority:type==='Exam'?'High':'Med',due:due||null,done:false,order:state.todos.length+1,created:Date.now()}; state.todos.push(t); save(); renderTodos(); renderStats(); }
+
+/* Quick add to week */
+function quickAddToWeek(kind){ const title = prompt('Title', kind + ' — '); if(!title) return; const day = prompt('Day index (1 Mon, 7 Sun)', '1'); const time = prompt('Start time (HH:MM)', '08:00'); const item = {id:uid('w'), taskId:null, title, startSlot:time, duration:state.settings.slotLen}; state.week[day] = state.week[day] || []; state.week[day].push(item); save(); renderWeek(); }
+
+/* Global shortcuts */
+function globalShortcuts(e){ if(e.key==='n' || e.key==='N'){ document.getElementById('quickInput').focus(); } if(e.key==='/' ){ e.preventDefault(); document.getElementById('globalSearch').focus(); } if(e.key==='Delete'){ // if focused todo, delete
+  const sel = document.activeElement; if(sel && sel.closest && sel.closest('.todo')){ const id = sel.closest('.todo').dataset.id; if(id && confirm('Delete selected task?')){ state.todos = state.todos.filter(t=>t.id!==id); save(); renderTodos(); renderStats(); } }
+ } }
+
+init();
+
+</script>
+</body>
+</html>
