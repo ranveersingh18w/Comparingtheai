@@ -246,7 +246,7 @@
 
         .add-task-form {
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr auto auto;
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -646,54 +646,11 @@
                     
                     <div class="add-task-form">
                         <input type="text" placeholder="Add a new task..." class="task-input" id="new-task-input">
+                        <input type="datetime-local" class="task-input" id="new-task-date">
                         <button class="add-btn" id="add-task-btn">Add</button>
                     </div>
                     
                     <ul class="task-list" id="task-list">
-                        <li class="task-item high-priority">
-                            <div class="task-checkbox"></div>
-                            <div class="task-content">
-                                <div class="task-title">Complete Calculus Assignment</div>
-                                <div class="task-meta">
-                                    <span class="task-due">Today, 5:00 PM</span>
-                                    <span class="task-tag">Assignment</span>
-                                </div>
-                            </div>
-                            <div class="task-actions">
-                                <button><i class="fas fa-edit"></i></button>
-                                <button><i class="fas fa-trash"></i></button>
-                            </div>
-                        </li>
-                        
-                        <li class="task-item medium-priority">
-                            <div class="task-checkbox checked"></div>
-                            <div class="task-content">
-                                <div class="task-title">Read Chapter 5 - Psychology</div>
-                                <div class="task-meta">
-                                    <span class="task-due">Tomorrow, 9:00 AM</span>
-                                    <span class="task-tag">Study</span>
-                                </div>
-                            </div>
-                            <div class="task-actions">
-                                <button><i class="fas fa-edit"></i></button>
-                                <button><i class="fas fa-trash"></i></button>
-                            </div>
-                        </li>
-                        
-                        <li class="task-item low-priority">
-                            <div class="task-checkbox"></div>
-                            <div class="task-content">
-                                <div class="task-title">Buy supplies for chemistry lab</div>
-                                <div class="task-meta">
-                                    <span class="task-due">Sep 15, 2:00 PM</span>
-                                    <span class="task-tag">Personal</span>
-                                </div>
-                            </div>
-                            <div class="task-actions">
-                                <button><i class="fas fa-edit"></i></button>
-                                <button><i class="fas fa-trash"></i></button>
-                            </div>
-                        </li>
                     </ul>
                 </div>
                 
@@ -830,6 +787,7 @@
     const themeToggle = document.getElementById('theme-toggle');
     const taskList = document.getElementById('task-list');
     const newTaskInput = document.getElementById('new-task-input');
+    const newTaskDateInput = document.getElementById('new-task-date');
     const addTaskBtn = document.getElementById('add-task-btn');
     const tabs = document.querySelectorAll('.tab');
     const panels = {
@@ -844,6 +802,30 @@
 
     // --- STATE ---
     let currentDate = new Date();
+    let tasks = [];
+
+    // --- LOCAL STORAGE ---
+    const saveTasks = () => {
+        localStorage.setItem('studySyncTasks', JSON.stringify(tasks));
+    };
+
+    const loadTasks = () => {
+        const storedTasks = localStorage.getItem('studySyncTasks');
+        if (storedTasks) {
+            tasks = JSON.parse(storedTasks);
+            renderTasks();
+        }
+    };
+
+    const renderTasks = () => {
+        taskList.innerHTML = '';
+        // Apply filters before rendering
+        const filteredTasks = getFilteredTasks();
+        filteredTasks.forEach(task => {
+            const taskElement = createTaskElement(task);
+            taskList.appendChild(taskElement);
+        });
+    };
 
     // --- THEME TOGGLE ---
     const applyTheme = (isDark) => {
@@ -859,16 +841,11 @@
     // --- TABS ---
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            // Deactivate all tabs and hide all panels
             tabs.forEach(t => t.classList.remove('active'));
             Object.values(panels).forEach(panel => panel.style.display = 'none');
-
-            // Activate clicked tab and show corresponding panel
             tab.classList.add('active');
             const tabName = tab.getAttribute('data-tab');
             panels[tabName].style.display = 'block';
-
-            // Render planner if its tab is selected
             if (tabName === 'weekly') renderWeeklyPlanner(currentDate);
             if (tabName === 'monthly') renderMonthlyCalendar(currentDate);
         });
@@ -880,14 +857,11 @@
         const endOfDay = new Date(now);
         endOfDay.setHours(23, 59, 59, 999);
         const diff = endOfDay - now;
-
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
         document.getElementById('countdown').textContent =
             `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
         const totalSecondsInDay = 24 * 60 * 60;
         const secondsPassed = totalSecondsInDay - (diff / 1000);
         const progressPercentage = (secondsPassed / totalSecondsInDay) * 100;
@@ -895,7 +869,6 @@
         const radius = parseFloat(circle.getAttribute('r'));
         const circumference = 2 * Math.PI * radius;
         const offset = circumference - (progressPercentage / 100) * circumference;
-
         circle.style.strokeDashoffset = offset;
         document.querySelector('.progress-value').textContent = `${Math.round(progressPercentage)}%`;
     };
@@ -910,16 +883,24 @@
     };
 
     // --- TASK MANAGEMENT ---
-    const createTaskElement = (title, dueDate = 'Today', tag = 'General', priority = 'low') => {
+    const createTaskElement = (task) => {
         const li = document.createElement('li');
-        li.className = `task-item ${priority}-priority`;
+        li.className = `task-item low-priority ${task.completed ? 'completed' : ''}`;
+        li.dataset.id = task.id;
+
+        let formattedDate = 'Today';
+        if (task.dueDate) {
+            const date = new Date(task.dueDate);
+            formattedDate = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        }
+
         li.innerHTML = `
-            <div class="task-checkbox"></div>
+            <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
             <div class="task-content">
-                <div class="task-title">${title}</div>
+                <div class="task-title">${task.title}</div>
                 <div class="task-meta">
-                    <span class="task-due">${dueDate}</span>
-                    <span class="task-tag">${tag}</span>
+                    <span class="task-due">${formattedDate}</span>
+                    <span class="task-tag">General</span>
                 </div>
             </div>
             <div class="task-actions">
@@ -930,84 +911,111 @@
         return li;
     };
 
-    const addTask = (title) => {
-        if (title.trim() === '') return;
-        const newTask = createTaskElement(title);
-        taskList.prepend(newTask);
+    const addTask = () => {
+        const title = newTaskInput.value.trim();
+        if (title === '') return;
+
+        const dueDate = newTaskDateInput.value;
+
+        const newTask = {
+            id: Date.now().toString(),
+            title: title,
+            dueDate: dueDate || null,
+            completed: false
+        };
+
+        tasks.unshift(newTask);
+        saveTasks();
+        renderTasks();
+
         newTaskInput.value = '';
+        newTaskDateInput.value = '';
     };
 
-    addTaskBtn.addEventListener('click', () => addTask(newTaskInput.value));
-    newTaskInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') addTask(newTaskInput.value);
-    });
+    addTaskBtn.addEventListener('click', addTask);
+    newTaskInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
 
     taskList.addEventListener('click', (e) => {
-        const target = e.target;
-        const taskItem = target.closest('.task-item');
+        const taskItem = e.target.closest('.task-item');
         if (!taskItem) return;
 
-        if (target.closest('.task-checkbox')) {
-            target.closest('.task-checkbox').classList.toggle('checked');
-            taskItem.classList.toggle('completed');
-        } else if (target.closest('.delete-btn')) {
-            taskItem.remove();
-        } else if (target.closest('.edit-btn')) {
-            handleEditTask(taskItem);
+        const taskId = taskItem.dataset.id;
+
+        if (e.target.closest('.task-checkbox')) {
+            const task = tasks.find(t => t.id === taskId);
+            if(task) {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks();
+            }
+        } else if (e.target.closest('.delete-btn')) {
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveTasks();
+            renderTasks();
+        } else if (e.target.closest('.edit-btn')) {
+            handleEditTask(taskItem, taskId);
         }
     });
 
-    const handleEditTask = (taskItem) => {
+    const handleEditTask = (taskItem, taskId) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
         const taskContent = taskItem.querySelector('.task-content');
         const taskTitleDiv = taskContent.querySelector('.task-title');
         const editButton = taskItem.querySelector('.edit-btn');
-        const isEditing = editButton.dataset.editing === 'true';
+        const isEditing = taskItem.classList.contains('editing');
 
         if (isEditing) {
             const input = taskContent.querySelector('input.edit-input');
-            taskTitleDiv.textContent = input.value;
-            taskContent.removeChild(input);
-            taskTitleDiv.style.display = 'block';
-            editButton.innerHTML = '<i class="fas fa-edit"></i>';
-            delete editButton.dataset.editing;
+            task.title = input.value;
+            taskItem.classList.remove('editing');
+            saveTasks();
+            renderTasks();
         } else {
-            const currentTitle = taskTitleDiv.textContent;
-            taskTitleDiv.style.display = 'none';
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = currentTitle;
-            input.className = 'task-input edit-input';
-            taskContent.insertBefore(input, taskTitleDiv);
+            taskItem.classList.add('editing');
+            const currentTitle = task.title;
+            taskTitleDiv.innerHTML = `<input type="text" class="task-input edit-input" value="${currentTitle}">`;
+            const input = taskTitleDiv.querySelector('input');
             input.focus();
-            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleEditTask(taskItem); });
-            input.addEventListener('blur', () => handleEditTask(taskItem));
-            editButton.innerHTML = '<i class="fas fa-save"></i>';
-            editButton.dataset.editing = 'true';
+            
+            const save = () => {
+                task.title = input.value;
+                taskItem.classList.remove('editing');
+                saveTasks();
+                renderTasks();
+            };
+
+            input.addEventListener('blur', save, { once: true });
+            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') save(); });
         }
     };
 
     // --- FILTERING & SEARCH ---
-    const applyFilters = () => {
+    const getFilteredTasks = () => {
         const activeFilter = document.querySelector('.filter-btn.active').textContent;
         const searchTerm = searchInput.value.toLowerCase();
-        const tasks = taskList.querySelectorAll('.task-item');
+        
+        return tasks.filter(task => {
+            const title = task.title.toLowerCase();
+            const isCompleted = task.completed;
+            const isToday = !task.dueDate || new Date(task.dueDate).toDateString() === new Date().toDateString();
 
-        tasks.forEach(task => {
-            const title = task.querySelector('.task-title').textContent.toLowerCase();
-            const isCompleted = task.classList.contains('completed');
-            const isHighPriority = task.classList.contains('high-priority');
-            const isToday = task.querySelector('.task-due').textContent.includes('Today');
+            if (searchTerm && !title.includes(searchTerm)) return false;
 
-            let show = true;
-            if (activeFilter === 'Completed' && !isCompleted) show = false;
-            if (activeFilter === 'High Priority' && !isHighPriority) show = false;
-            if (activeFilter === 'Today' && !isToday) show = false;
-            if (searchTerm && !title.includes(searchTerm)) show = false;
-            
-            // Note: Overdue filter is not implemented due to complex date parsing
-            if (activeFilter === 'Overdue') show = false;
-
-            task.style.display = show ? 'flex' : 'none';
+            switch (activeFilter) {
+                case 'Completed':
+                    return isCompleted;
+                case 'Today':
+                    return isToday && !isCompleted;
+                case 'High Priority': // Note: Priority not implemented in task object yet
+                    return !isCompleted;
+                case 'Overdue': // Note: Overdue logic not fully implemented
+                    return false;
+                case 'All':
+                default:
+                    return true;
+            }
         });
     };
 
@@ -1015,22 +1023,20 @@
         if (e.target.classList.contains('filter-btn')) {
             document.querySelector('.filter-btn.active').classList.remove('active');
             e.target.classList.add('active');
-            applyFilters();
+            renderTasks();
         }
     });
-    searchInput.addEventListener('input', applyFilters);
+    searchInput.addEventListener('input', renderTasks);
 
-    // --- PLANNERS ---
+    // --- PLANNERS (render logic remains the same) ---
     const renderWeeklyPlanner = (date) => {
         const weekView = document.getElementById('week-view');
         const weekNavSpan = weeklyNavContainer.querySelector('span');
         const startOfWeek = new Date(date);
-        startOfWeek.setDate(date.getDate() - (date.getDay() === 0 ? 6 : date.getDay() - 1)); // Monday start
+        startOfWeek.setDate(date.getDate() - (date.getDay() === 0 ? 6 : date.getDay() - 1));
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         weekNavSpan.textContent = `${startOfWeek.toLocaleDateString(undefined, {month: 'short', day: 'numeric'})} - ${endOfWeek.toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}`;
-
-        // Clear and rebuild planner
         weekView.innerHTML = `
             <div class="time-label"></div>
             ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => `<div class="day-column"><div class="day-header">${day}</div></div>`).join('')}
@@ -1050,12 +1056,10 @@
         const monthGrid = document.getElementById('month-grid');
         const monthNavSpan = monthlyNavContainer.querySelector('span');
         monthNavSpan.textContent = date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-
         const year = date.getFullYear();
         const month = date.getMonth();
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-
         monthGrid.innerHTML = `
             ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => `<div class="day-of-week">${day}</div>`).join('')}
         `;
@@ -1084,7 +1088,7 @@
     monthlyNavContainer.addEventListener('click', (e) => {
         if (e.target.closest('button')) {
             const direction = e.target.closest('button').innerHTML.includes('fa-chevron-left') ? -1 : 1;
-            currentDate.setMonth(currentDate.getMonth() + direction, 1); // Set to day 1 to avoid month skipping issues
+            currentDate.setMonth(currentDate.getMonth() + direction, 1);
             renderMonthlyCalendar(currentDate);
         }
     });
@@ -1093,7 +1097,7 @@
     document.querySelector('.quick-templates').addEventListener('click', (e) => {
         const button = e.target.closest('.template-btn');
         if (button) {
-            tabs[0].click(); // Switch to To-Do tab
+            tabs[0].click();
             const templates = {
                 'assignment-btn': 'Assignment: ',
                 'exam-btn': 'Study for Exam: ',
@@ -1113,7 +1117,7 @@
     updateCountdown();
     setInterval(updateCountdown, 1000);
     updateMotivationalText();
-    // Initial tasks already have listeners via delegation
+    loadTasks();
 });
     </script>
 </body>
